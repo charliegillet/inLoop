@@ -22,11 +22,17 @@ inLoop listens through a Vexo band on your wrist, captions everything you say, a
 
 Everything runs on one Mac. Captions, tasks and GPS fixes stay in local files and a local SQLite database.
 
-## Demo
+<h2 align="center" id="demo">Demo</h2>
 
-[![Watch the inLoop demo on YouTube](https://img.youtube.com/vi/6uO9b89b-s0/hqdefault.jpg)](https://youtu.be/6uO9b89b-s0)
+<p align="center">
+  <a href="https://youtu.be/6uO9b89b-s0">
+    <img src="docs/images/demo-thumbnails/03-typography.png" alt="Watch the inLoop VexoHacks demo: live captions to action items" width="720">
+  </a>
+</p>
 
-[Watch our VexoHacks demo →](https://youtu.be/6uO9b89b-s0)
+<p align="center">
+  <a href="https://youtu.be/6uO9b89b-s0"><strong>▶ Watch the inLoop demo</strong></a>
+</p>
 
 ## What a conversation looks like
 
