@@ -1,0 +1,34 @@
+.venv/
+.venv-whisper/
+logs/
+omi_live_research.md
+*.log
+*.pid
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+
+.venv-pipecat/
+
+# Local diagnostic receipts include host paths and process/history metadata.
+docs/evidence/*.json
+!docs/evidence/pipecat-smoke.json
+!docs/evidence/pipecat-whisper-fallback.json
+
+.venv-vexo/
+
+.venv-speaker/
+
+# Private app data and signing artifacts
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.apk
+*.keystore
+*.jks
+*.pem
+*.key

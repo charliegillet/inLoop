@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>inLoop</title><link rel="icon" href="/assets/icon.svg"><link rel="stylesheet" href="/assets/style.css"><script type="module" src="/assets/app.js"></script></head>
+<body><main class="workspace">
+<header><div class="brand"><h1>inLoop</h1><p id="session-title">Hackathon workspace</p></div><div class="header-tools"><time id="clock"></time><button id="theme" class="icon-button" aria-label="Switch appearance">☼</button></div></header>
+<nav aria-label="Workspace"><button id="live-tab" class="active">Live</button><button id="sessions-tab">Sessions</button><span class="connection"><i id="connection-dot" class="dot"></i><span id="connection">Connecting to Vexo 43</span></span></nav>
+<div class="canvas-grid">
+<section id="session-list" hidden><div class="section-heading"><h2>Sessions</h2><button id="new-session">+ New session</button></div><div id="sessions" class="surface"></div></section>
+<div id="dashboard">
+<div class="top-grid">
+<section class="devices-section"><div class="section-heading"><h2>Devices</h2><button id="all-devices">All devices ↗</button></div><div id="devices" class="devices"><p class="empty">Loading devices…</p></div></section>
+<section class="location-section"><div class="section-heading location-heading"><h2>Location</h2><span id="location-city" class="location-detail" hidden></span><time id="location-time" class="location-detail"></time><a id="open-location" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" aria-disabled="true">Open map ↗</a></div><div class="surface map-surface"><div id="map" aria-label="GPS map"></div></div><div class="location-footer"><p id="location-caption" class="caption">Waiting for a GPS fix</p><button id="latest-location" hidden>Latest fix</button><a class="place-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" title="City names from Photon / OpenStreetMap">Place © OpenStreetMap</a></div></section>
+</div>
+<div class="bottom-grid">
+<section class="tasks-section"><div class="section-heading"><h2>To-do</h2><span id="task-count" class="meta"></span></div><div class="surface task-surface"><div id="tasks"></div><form id="add-task" autocomplete="off"><input id="task-title" aria-label="New task" placeholder="+ Add task" maxlength="240" required><button type="submit" class="submit-task" aria-label="Save task">↵</button></form><p id="task-status" class="caption"></p></div></section>
+<section class="github-section"><div class="section-heading"><h2>GitHub</h2><span id="github-scope" class="meta">Open work</span><a id="github-link" href="https://github.com/charliegillet/marshal" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></div><div class="surface github-surface"><div id="github-filters" class="filters" role="group" aria-label="GitHub filter"><button data-filter="all" class="active">All</button><button data-filter="issues">Issues</button><button data-filter="prs">PRs</button></div><div id="github"></div></div></section>
+</div>
+<section class="health-section"><div class="section-heading"><h2>Health</h2><p id="health-source" class="caption">Phone · not synced</p></div><div id="health" class="surface"></div></section>
+</div>
+<aside class="transcript" aria-label="Live transcript"><div class="transcript-heading"><h2>Live transcript</h2><button id="expand" class="icon-button" aria-label="Expand transcript" aria-expanded="false">⤢</button></div><div class="transcript-surface surface"><p class="listening"><i id="listening-dot" class="dot"></i><span id="listening">Connecting</span></p><div id="feed" tabindex="0" aria-label="Transcript, newest speech at top"><p class="empty">Your conversation will appear here.</p></div><button id="new-words" hidden>New speech ↑</button></div></aside>
+</div>
+<footer><span id="privacy">Audio → Deepgram · Task suggestions → Gemini</span><span id="notice" role="status" hidden></span></footer>
+</main>
+<dialog id="devices-dialog" aria-labelledby="devices-title"><div class="section-heading"><h2 id="devices-title">All devices</h2><button id="close-devices" class="icon-button" aria-label="Close devices">×</button></div><div id="device-list"></div></dialog>
+</body></html>

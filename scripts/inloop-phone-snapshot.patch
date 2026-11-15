@@ -1,0 +1,48 @@
+--- a/app/src/main/java/dev/alhinai/fliptracker/LocationTrackerService.java
++++ b/app/src/main/java/dev/alhinai/fliptracker/LocationTrackerService.java
+@@ -73,6 +73,7 @@
+ 
+ public final class LocationTrackerService extends Service {
+     private static final String TAG = "FlipTracker";
++    private final ScheduledExecutorService localSnapshots = Executors.newSingleThreadScheduledExecutor();
+     private static final String CHANNEL_ID = "location_tracking";
+     private static final int NOTIFICATION_ID = 7;
+     private static final long UPDATE_INTERVAL_MS = 180_000L;
+@@ -165,6 +166,7 @@
+         beginLocationUpdates();
+         beginDirectHeartRate();
+         beginHeartRateUpdates();
++        localSnapshots.scheduleWithFixedDelay(this::writeLocalSnapshot, 1L, 5L, TimeUnit.SECONDS);
+         uploader.scheduleWithFixedDelay(
+             this::uploadTelemetrySnapshot,
+             5L,
+@@ -1112,6 +1114,21 @@
+         return payload;
+     }
+ 
++    private void writeLocalSnapshot() {
++        android.util.AtomicFile target = new android.util.AtomicFile(new java.io.File(getFilesDir(), "inloop-telemetry.json"));
++        java.io.FileOutputStream stream = null;
++        try {
++            JSONObject payload = telemetrySnapshot();
++            payload.put("snapshotAt", Instant.now().toString());
++            payload.put("healthPermissionsGranted", checkSelfPermission("android.permission.health.READ_STEPS") == PackageManager.PERMISSION_GRANTED);
++            stream = target.startWrite();
++            stream.write(payload.toString().getBytes(StandardCharsets.UTF_8));
++            target.finishWrite(stream);
++        } catch (Exception error) {
++            if (stream != null) target.failWrite(stream);
++        }
++    }
++
+     private SharedPreferences telemetryPreferences() {
+         return getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
+     }
+@@ -1323,6 +1340,7 @@
+         }
+         directUploader.shutdownNow();
+         uploader.shutdownNow();
++        localSnapshots.shutdownNow();
+         super.onDestroy();
+     }
+ 
