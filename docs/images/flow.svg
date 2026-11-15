@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif">
+  <title>How inLoop works: Vexo band, caption bridge, journal, inLoop app, dashboard</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#2f9e7a" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2f9e7a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2129"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="cardAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15342b"/>
+      <stop offset="1" stop-color="#12201c"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="420" rx="20" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1279" height="419" rx="20" fill="none" stroke="#30363d"/>
+  <circle cx="640" cy="210" r="300" fill="url(#glow)"/>
+
+  <text x="28" y="56" font-size="22" font-weight="700" fill="#e6edf3">How inLoop works</text>
+  <text x="228" y="56" font-size="15" fill="#8b949e">from a sentence you say to a task on your dashboard</text>
+
+  <!-- Card geometry: w=216, gap=36, x0=28, y=92, h=220 -->
+
+  <!-- 1 Vexo band -->
+  <g filter="url(#shadow)"><rect x="28" y="92" width="216" height="220" rx="16" fill="url(#card)" stroke="#30363d"/></g>
+  <text x="46" y="118" font-size="12" font-weight="700" fill="#8b949e">01</text>
+  <text x="46" y="150" font-size="19" font-weight="700" fill="#e6edf3">Vexo band</text>
+  <text x="46" y="180" font-size="13.5" fill="#8b949e">Mic and motion sensors</text>
+  <text x="46" y="200" font-size="13.5" fill="#8b949e">over Bluetooth or USB</text>
+  <text x="46" y="232" font-size="13.5" fill="#8b949e">Omi phone app also</text>
+  <text x="46" y="252" font-size="13.5" fill="#8b949e">works as a source</text>
+  <text x="46" y="292" font-size="12" fill="#2f9e7a">vexo_source.py</text>
+
+  <!-- 2 Caption bridge -->
+  <g filter="url(#shadow)"><rect x="280" y="92" width="216" height="220" rx="16" fill="url(#card)" stroke="#30363d"/></g>
+  <text x="298" y="118" font-size="12" font-weight="700" fill="#8b949e">02</text>
+  <text x="298" y="150" font-size="19" font-weight="700" fill="#e6edf3">Caption bridge</text>
+  <text x="298" y="180" font-size="13.5" fill="#8b949e">Deepgram Nova-3,</text>
+  <text x="298" y="200" font-size="13.5" fill="#8b949e">direct or via Pipecat</text>
+  <text x="298" y="232" font-size="13.5" fill="#8b949e">Local Whisper as an</text>
+  <text x="298" y="252" font-size="13.5" fill="#8b949e">explicit fallback</text>
+  <text x="298" y="292" font-size="12" fill="#2f9e7a">bridge.py · :8787</text>
+
+  <!-- 3 Journal -->
+  <g filter="url(#shadow)"><rect x="532" y="92" width="216" height="220" rx="16" fill="url(#card)" stroke="#30363d"/></g>
+  <text x="550" y="118" font-size="12" font-weight="700" fill="#8b949e">03</text>
+  <text x="550" y="150" font-size="19" font-weight="700" fill="#e6edf3">Journal</text>
+  <text x="550" y="180" font-size="13.5" fill="#8b949e">Each final sentence</text>
+  <text x="550" y="200" font-size="13.5" fill="#8b949e">saved before it's shown</text>
+  <text x="550" y="232" font-size="13.5" fill="#8b949e">JSONL plus daily</text>
+  <text x="550" y="252" font-size="13.5" fill="#8b949e">Markdown notes</text>
+  <text x="550" y="292" font-size="12" fill="#2f9e7a">storage.py · logs/</text>
+
+  <!-- 4 inLoop app (accent) -->
+  <g filter="url(#shadow)"><rect x="784" y="92" width="216" height="220" rx="16" fill="url(#cardAccent)" stroke="#2f9e7a"/></g>
+  <text x="802" y="118" font-size="12" font-weight="700" fill="#2f9e7a">04</text>
+  <text x="802" y="150" font-size="19" font-weight="700" fill="#e6edf3">inLoop app</text>
+  <text x="802" y="180" font-size="13.5" fill="#c9d1d9">Gemini pulls tasks,</text>
+  <text x="802" y="200" font-size="13.5" fill="#c9d1d9">each tied to a quote</text>
+  <text x="802" y="232" font-size="13.5" fill="#c9d1d9">Phone GPS and health,</text>
+  <text x="802" y="252" font-size="13.5" fill="#c9d1d9">GitHub issues and PRs</text>
+  <text x="802" y="292" font-size="12" fill="#2f9e7a">inloop_app.py · :8790</text>
+
+  <!-- 5 Dashboard -->
+  <g filter="url(#shadow)"><rect x="1036" y="92" width="216" height="220" rx="16" fill="url(#card)" stroke="#30363d"/></g>
+  <text x="1054" y="118" font-size="12" font-weight="700" fill="#8b949e">05</text>
+  <text x="1054" y="150" font-size="19" font-weight="700" fill="#e6edf3">Dashboard</text>
+  <text x="1054" y="180" font-size="13.5" fill="#8b949e">Live transcript, to-dos,</text>
+  <text x="1054" y="200" font-size="13.5" fill="#8b949e">map, health, GitHub</text>
+  <text x="1054" y="232" font-size="13.5" fill="#8b949e">Click a sentence to see</text>
+  <text x="1054" y="252" font-size="13.5" fill="#8b949e">where you said it</text>
+  <text x="1054" y="292" font-size="12" fill="#2f9e7a">web/ · no build step</text>
+
+  <!-- arrows -->
+  <line x1="246" y1="202" x2="276" y2="202" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="498" y1="202" x2="528" y2="202" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="750" y1="202" x2="780" y2="202" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1002" y1="202" x2="1032" y2="202" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text x="640" y="372" font-size="14" fill="#8b949e" text-anchor="middle">Runs on one Mac. Captions, tasks and GPS fixes stay in local files and SQLite.</text>
+</svg>
