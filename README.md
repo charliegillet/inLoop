@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/dashboard.png" alt="inLoop dashboard with sample data: devices, map, to-dos pulled from speech, GitHub work, health readings and a live transcript" width="100%">
+<img src="docs/images/dashboard.png" alt="Live inLoop dashboard in dark mode: Vexo connection, GPS map, to-do list, GitHub work, Health readings and newest-first transcript" width="100%">
 
 **A wearable workspace that remembers what you said, what you promised, and where you were.**
 
@@ -29,7 +29,7 @@ Everything runs on one Mac. Captions, tasks and GPS fixes stay in local files an
 >
 > **To-do**, a moment later: ☐ **Test Bluetooth connection** · 18:22:15, linked to that sentence and the GPS fix recorded when you said it.
 
-The screenshot above is the built-in design preview at `/preview`, which uses sample data and sends no capture or AI requests. The live app shows the same layout with your real captions, phone and GitHub data.
+Live inLoop dashboard in dark mode — screenshot supplied from our demo.
 
 ## How it works
 
