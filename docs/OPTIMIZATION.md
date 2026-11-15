@@ -1,6 +1,16 @@
-# Wearable pipeline audit — 14 November 2026
+# Wearable pipeline audit and current operating context
 
-For this captioning product, the strongest current design is **Vexo USB → capture and PCM decode on the attached Mac → local bridge → Nova-3 → captions and journal**, with Whisper as an explicit local alternative. Keep Pipecat when its frame pipeline is useful for the hackathon or future interaction; the evidence does not show that adding Pipecat accelerates transcription.
+## Current inLoop route
+
+The active setup is **Vexo band 43 → Bluetooth → this Mac → Pipecat → Deepgram Nova-3 → inLoop**, with Deepgram diarization enabled. The phone provides GPS and Health separately, over private ADB snapshots or the existing authenticated ingress; it is not the caption audio source. inLoop uses `gemini-decision-1` to classify finalized-text candidates as `none`, `todo`, `calendar`, or `action_item`. Resulting titles preserve exact source wording rather than generated descriptions; calendar candidates require review and do not write calendar events or send invitations. The standalone Vexo motion preview separately uses the same Decision model on IMU windows. These two Decision consumers are distinct from Deepgram speech recognition, and neither adds an LLM to the local pointer-control loop.
+
+Keep the single Vexo source owner, decoder, bridge and app on the Mac. Use naturally arriving audio frames, show provisional captions promptly and preserve immutable final/source identity. Pipecat provides orchestration; these measurements do **not** establish that it makes recognition faster. Whisper and direct Deepgram remain explicit legacy alternatives outside the active route.
+
+## Historical audit — 14 November 2026
+
+The measurements and deployment observations below describe their captured source versions, largely the earlier USB migration stage. They are retained as evidence, not as a claim that USB is the current transport or the Mini is still running. Subsequent BLE verification is documented in [VEXO.md](VEXO.md); the Mac is now active and the former Mini writer is stopped.
+
+The audit's original USB-centered recommendation and incomplete Bluetooth measurements were stage-specific. Live BLE capture has since been verified, while arbitrary BLE range, battery endurance and acoustic-to-screen latency remain unproven. Historical numbers must not be relabelled as BLE measurements.
 
 This audit covers source, controlled synthetic replay, and read-only observation of both deployments. It does not establish an absolute fastest configuration, physical microphone accuracy, wireless battery life, or production capacity.
 
@@ -35,7 +45,7 @@ The PCM boundary preserves both recognizers. Raw Opus sent directly to Deepgram 
 | Firmware and power | Earlier device session reported firmware 1.1.0 and a nearly empty charging battery | Keep USB power for the demo. Measure actual wireless runtime separately; no firmware image or power trace was analyzed | Partial |
 | Band encoding | SDK contract: mono 16 kHz, 20 ms Opus packets, 16-bit sequence counter | Keep native packet cadence; higher motion rates do not improve audio recognition. Sequence wraps every 1,310.72 seconds | Source verified |
 | USB transport | Python owned the correct Vexo port; runtime grew by 100 packets over a two-second observation | One device owner; detect loss, age, stream takeover, disconnect and stalled reads. Never infer USB throughput from the nominal serial baud rate | Runtime verified, fault tests partial |
-| Bluetooth | SDK supports BLE and shared USB/BLE settings | Measure body occlusion, distance, reconnection, packet loss and battery before choosing BLE for the demo | Unmeasured |
+| Bluetooth, at this audit stage | SDK supports BLE and shared USB/BLE settings; later Mac BLE verification is in VEXO.md | Body occlusion, range, reconnection and battery still require separate measurement | Unmeasured in this historical audit |
 | Host buffering | SDK serial reader permits 5,000 queued frames; new frames can be dropped when full | Maintain a much shorter downstream queue and oldest-frame age limit. A large queue can hide stale captions rather than provide useful resilience | Source verified |
 | Opus decode | SDK can conceal gaps, ignore late packets and skip large holes; these policies change the apparent timeline | Reset decoder per source generation; count corruption, loss and concealment separately. The Mac adapter currently ends a session on loss and performs a second validation decode | Source verified; offline codec receipt separate |
 | PCM ingress | Existing endpoint validates declared PCM16/16 kHz/mono and owns one active source | Preserve sample positions and source identity; carry source capture timing if physical latency is required. PCM bytes cannot prove which microphone generated them | Tested contract |
@@ -92,7 +102,7 @@ Five HTTPS-root handshake probes on each host gave median cumulative TLS-ready t
 4. Preserve URLs, email addresses and case-sensitive provider text when saving; normalize whitespace without inserting sentence boundaries.
 5. Reserve unique 0600 caption exports, including two exports within the same second.
 
-These changes are isolated from the running Mini and Mac deployments. The migration session should reconcile them against its source identity/USB adapter changes before any restart.
+At the captured audit stage, these changes were isolated from the running Mini and Mac deployments and required reconciliation before restart. That historical instruction is not a request to restart the current inLoop setup; later reconciliation and BLE verification have separate source-scoped receipts.
 
 Verification after reconciliation: 443 distinct tests passed (433 in the standard environment, two optional real-Pipecat tests in its environment, and eight capture tests against matching source hashes on the Mac), all eight fault scenarios passed, and isolated Pipecat/Deepgram and real-model Whisper checks verified saved output again. The earlier audit-only build passed 432 distinct tests. Shell syntax and whitespace checks passed. Published results retain their source scope.
 
@@ -100,7 +110,7 @@ Verification after reconciliation: 443 distinct tests passed (433 in the standar
 
 Optimize usefulness first: show partials immediately; save immutable finals; use a tap/bookmark to select useful context; run any summarization or action generation after a deliberate trigger or a finalized boundary. The current product has no need for an LLM call per interim revision or audio packet. Gestures should reference source session/sample positions and be deduplicated; do not connect actions to provisional text.
 
-For one wearer, keep the USB owner, decoder, bridge and UI on the attached Mac. Keep motion at the lowest rate needed by the chosen gesture. Decoder warmup should finish before the microphone is enabled. Avoid automatic tuning based on a single recognition error or fixed loudness threshold.
+For the current one-wearer setup, keep the BLE source owner, decoder, bridge and UI on the attached Mac. Historical USB timing evidence does not establish BLE latency. Keep motion at the lowest rate needed by the chosen gesture. Decoder warmup should finish before the microphone is enabled. Avoid automatic tuning based on a single recognition error or fixed loudness threshold.
 
 The current Deepgram adapter deliberately accepts Nova-3 English only. Supporting other languages requires coordinating provider settings, publication filters and recognition tests; changing one environment value does not make this build multilingual.
 
@@ -108,7 +118,7 @@ For multiple wearers, the next architecture change is a `DeviceSession` boundary
 
 At 16 kHz PCM16 mono, each wearer contributes 32,000 audio bytes/second; 100 wearers contribute 3.2 MB/second before transport overhead. Opus reduces bandwidth substantially, but removing a sub-millisecond decode is unlikely to dominate a cloud result delay. Reusing compressed audio safely requires preserving frame durations, sequence gaps and fallback decoding.
 
-Deepgram's published Nova-3 streaming limit is up to 150 concurrent requests per project on the listed self-serve plans; diarization can lower the limit. This is an external ceiling, **not** validated application capacity. Enforce quotas and bounded admission, monitor event-loop lag, RSS, oldest-frame age, p95/p99 result delay and save backlog; test reconnect bursts without load-testing the provider beyond agreed limits.
+The audit recorded an external Nova-3 streaming ceiling of up to 150 concurrent requests per project on the then-listed self-serve plans, with diarization potentially lowering it. Verify current provider limits before capacity planning; this historical figure is **not** validated application capacity. Enforce quotas and bounded admission, monitor event-loop lag, RSS, oldest-frame age, p95/p99 result delay and save backlog; test reconnect bursts without load-testing the provider beyond agreed limits.
 
 ### Acceptance checks still required
 

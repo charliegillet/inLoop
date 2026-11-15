@@ -1,4 +1,4 @@
-"""Daily Omi commands, with development tools kept behind an explicit dev command."""
+"""Daily wearable commands, with development tools kept behind an explicit dev command."""
 import argparse
 import json
 import math
@@ -61,16 +61,16 @@ def status_report():
                 "pending_saves": pending if nonnegative(pending) else None,
                 "last_final_age_sec": age if nonnegative(age) else None}
     except (OSError, ValueError, TypeError, KeyError):
-        return {"service": "unavailable", "detail": "Local health is unavailable; run ./omi check or ./run.sh status."}
+        return {"service": "unavailable", "detail": "Local health is unavailable; run ./vexo check or ./run.sh status."}
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Operate Omi live captions.")
+    parser = argparse.ArgumentParser(prog="vexo", description="Operate Vexo live captions through Pipecat and Deepgram.")
     commands = parser.add_subparsers(dest="command", required=True)
     for name, help_text in (("start", "Start the service"), ("stop", "Drain and stop the service"),
                             ("restart", "Gracefully restart, preserving history")):
         commands.add_parser(name, help=help_text)
-    status = commands.add_parser("status", help="Show service, phone, audio, recognizer and saving states")
+    status = commands.add_parser("status", help="Show service, source, audio, recognizer and saving states")
     status.add_argument("--json", action="store_true")
     backend = commands.add_parser("backend", help="Validate, switch and verify the selected recognizer")
     backend.add_argument("name", choices=("deepgram", "whisper"))

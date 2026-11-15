@@ -2,11 +2,17 @@
 
 Researched and checked on the Mac, 14 November 2026. Hardware limits below are the kit's documented limits, not a measured performance guarantee for this radio, battery, posture or firmware session.
 
+## Current stack and model roles
+
+**Vexo band 43 → Bluetooth → this Mac → Pipecat + Deepgram → saved captions / inLoop** is the normal audio path. The same `vexo_source.py` owner publishes motion snapshots. Local control in `motion_control.py` and the advisory `scripts/live_gemini_motion.py` preview consume that telemetry without opening another BLE connection. `gemini-decision-1` scores the preview's motion labels and separately classifies finalized transcript segments in `inloop_app.py` as `none`, `todo`, `calendar`, or `action_item`. Resulting items keep source wording; calendar candidates require review and do not write to a calendar. Gemini Decision is not wired to automatic Mac input.
+
+The wearer rejected the earlier calibration as a trusted classifier reference. Historical measurements below remain evidence of that recording only; [the current raw preview](GEMINI_RAW_LIVE.md) excludes it and uses a separate recent direction check when screen directions are needed.
+
 ## Recommendation
 
 Use the band first as a tilt joystick for scrolling and coarse pointer movement, with a separate precision scale. Add a small, personally trained command vocabulary after measuring false activations. Keep the motion-to-input path local and deterministic. Speech recognition and an LLM need not be in that path.
 
-The present implementation is `./omi motion --control`. `./omi motion` remains a display-only preview. Actual Mac input is opt-in and starts paused. Training accuracy and wearer usability remain to be measured; the 17-trial reference was a baseline, not a trained recognizer.
+The present implementation is `./vexo motion --control`. `./vexo motion` remains a display-only preview. Actual Mac input is opt-in and starts paused. Training accuracy and wearer usability remain to be measured; the 17-trial reference was a baseline, not a trained recognizer.
 
 ## What the device provides
 
@@ -30,7 +36,7 @@ An IMU measures motion and orientation, not position directly. Integrating accel
 
 Band accelerometer/gyro → existing Bluetooth owner in `vexo_source.py` → `MotionTelemetry` → atomic local snapshot → `ControlSession` calibration and motion checks → `MacInput` → Quartz pointer/scroll/click events.
 
-The controller shares the existing owner and never opens another Bluetooth connection. In control mode, snapshots publish at up to 25 Hz instead of the preview's 10 Hz; the controller polls at about 50 Hz. Sampling and polling rates are not physical movement-to-screen latency measurements. Capture continues independently to the chosen speech recognizer.
+The controller shares the existing owner and never opens another Bluetooth connection. In control mode, snapshots publish at up to 25 Hz instead of the preview's 10 Hz; the controller polls at about 50 Hz. Sampling and polling rates are not physical movement-to-screen latency measurements. Capture continues independently through the normal Pipecat + Deepgram speech path; a separately selected backend is a configuration change, not a motion requirement.
 
 The controller requires fresh samples and snapshots, the correct band number, valid finite motion values, an explicit neutral/right/down setup and explicit engagement. A reconnect discards the session mapping. Stale data, unusually large acceleration, a control-loop stall, a mode change or Escape pauses input. Returning inside the dead zone stops movement immediately. Single taps do nothing until tap clicking is explicitly enabled; a single click waits 550 ms so a following double-tap can cancel it. These interaction choices are provisional, not a certified classifier.
 
@@ -40,7 +46,7 @@ Mac input uses Apple's Quartz APIs. The terminal running control needs Accessibi
 
 Private source: `logs/motion-calibration-20261114T215308431230Z.json`, left wrist, snug strap. The neutral noise p95 was **1.51 degrees**, suggesting a **5.52-degree** dead zone. Repeated directions differed by approximately 12.6 degrees left, 23.0 right, 8.2 up and 10.8 down. Returning to neutral differed by 8.9 degrees. The reference spans reconnects; each trial used one source generation.
 
-These observations justify learning the current neutral and comfortable right/down axes before control. They do not establish fine pointing accuracy, universal gestures, session-to-session stability or a false-command rate. The new controller uses the saved noise recommendation, then asks for a short posture-specific mapping.
+These observations justify learning the current neutral and comfortable right/down axes before control. They do not establish fine pointing accuracy, universal gestures, session-to-session stability or a false-command rate. The local controller still reads a saved noise recommendation, then asks for a short posture-specific mapping. That legacy behavior must not be confused with the current raw Gemini preview, which never loads the rejected reference.
 
 ## How to get used to it
 

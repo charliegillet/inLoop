@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.15
-"""A quiet, read-only page of Omi captions; finalized words appear immediately."""
+"""A quiet, read-only page of wearable captions; finalized words appear immediately."""
 import argparse
 from speakers import display_text
 import asyncio
@@ -1403,7 +1403,7 @@ def paint(screen, viewer, palette, measure: int | None = READING_MEASURE):
                           "[ / ]          Previous / next bookmark",
                           "/              Find words", "n / N          Next / previous match",
                           "y              Copy this paragraph", "Y              Copy the whole session",
-                          "e              Export captions to ~/omi/logs",
+                          "e              Export captions to the configured log directory",
                           "t              Show / hide times", "f              Focus this passage",
                           "drag           Select text · the wheel still scrolls",
                           "m              Hand the mouse back to the terminal", "d              Connection details",
@@ -1675,9 +1675,9 @@ async def run(screen, args):
 
 def main():
     if sys.version_info[:2] != (3, 15):
-        sys.exit("Run this viewer with ~/omi/.venv/bin/python3.15.")
+        sys.exit("Run this viewer with ./vexo captions.")
     parser = argparse.ArgumentParser(description=__doc__, epilog="Press ? in the viewer for controls.")
-    parser.add_argument("--url", default=DEFAULT_CAPTION_URL, help="Omi monitor WebSocket URL")
+    parser.add_argument("--url", default=DEFAULT_CAPTION_URL, help="Caption monitor WebSocket URL")
     parser.add_argument("--token-file", metavar="PATH",
                         help="Read the caption access token from a private file; remote viewers may also use OMI_CAPTION_TOKEN")
     parser.add_argument("--mouse", choices=("wheel", "select"), default="wheel",
@@ -1686,7 +1686,7 @@ def main():
                         help="Synchronized terminal updates (default: auto); use off for incompatible terminals")
     parser.add_argument("--clipboard", choices=("auto", "osc52", "pbcopy"), default="auto",
                         help="Clipboard route (default: auto — OSC 52 over SSH/tmux, pbcopy locally)")
-    parser.add_argument("--export-dir", default="~/omi/logs", help="Where 'e' writes exported captions")
+    parser.add_argument("--export-dir", default=str(Path(__file__).resolve().parent / "logs"), help="Where 'e' writes exported captions")
     parser.add_argument("--measure", type=measure_value, default=READING_MEASURE, metavar="auto|full|N",
                         help="Reading column width in characters (default 72, inside Bringhurst's 45-75 range)")
     parser.add_argument("--title", action="store_true",
@@ -1716,7 +1716,7 @@ def main():
     except KeyboardInterrupt:
         pass
     except (curses.error, OSError):
-        sys.exit("Could not open the terminal display. Try TERM=xterm-256color ~/omi/tui.sh")
+        sys.exit("Could not open the terminal display. Try TERM=xterm-256color ./vexo captions")
     finally:
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, terminal_state)
 

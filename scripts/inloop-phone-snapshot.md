@@ -1,5 +1,7 @@
 # Direct phone telemetry for inLoop
 
+GPS and Health travel separately from the Vexo audio stream. Speech uses Vexo → Bluetooth → Mac → Pipecat → Deepgram; Gemini Decision classifies finalized speech actions in inLoop. The phone is not an audio relay.
+
 The installed `dev.alhinai.fliptracker` update adds one private, atomic JSON snapshot at `files/inloop-telemetry.json`. The foreground service refreshes it every five seconds. inLoop reads it through an authorized ADB connection using `run-as`; it does not expose a phone HTTP port or request additional permissions.
 
 `phone_telemetry.py` validates snapshot age, coordinates and numeric health values. Each reading retains its source timestamp. Missing readings stay missing. A stale or disconnected USB source is labelled unavailable; the existing authenticated phone ingress and website readings remain fallbacks.

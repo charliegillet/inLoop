@@ -162,17 +162,17 @@ check_ports() {
 stop_bridge() {
   local pid birth
   if ! pid="$(tracked_pid)"; then
-    echo "No tracked Omi bridge is running."
+    echo "No tracked Vexo caption bridge is running."
     return
   fi
   birth="$(process_birth "$pid")"
-  echo "Stopping Omi bridge (PID $pid); waiting for queued audio to drain..."
+  echo "Stopping Vexo caption bridge (PID $pid); waiting for queued audio to drain..."
   kill -TERM "$pid" 2>/dev/null || true
   while is_bridge_process "$pid" && [ "$(process_birth "$pid")" = "$birth" ]; do
     sleep 1
   done
   rm -f "$PID_FILE" "$IDENTITY_FILE"
-  echo "Omi bridge stopped."
+  echo "Vexo caption bridge stopped."
 }
 
 clear_data() {
@@ -223,19 +223,19 @@ if [ "$ACTION" = clear ]; then
   stop_bridge
   check_ports
   clear_data
-  echo "Omi bridge is stopped. Start it with: $0 start"
+  echo "Vexo caption bridge is stopped. Start it with: $0 start"
   exit
 fi
 if [ "$ACTION" = status ]; then
   if PID="$(tracked_pid)"; then
     if health_matches "$PID"; then
-      echo "Omi bridge is running and healthy on Python 3.15 (PID $PID)."
+      echo "Vexo caption bridge is running and healthy on Python 3.15 (PID $PID)."
       exit 0
     fi
-    echo "Omi bridge process exists (PID $PID), but local health does not confirm a healthy Python 3.15 server." >&2
+    echo "Vexo caption bridge process exists (PID $PID), but local health does not confirm a healthy Python 3.15 server." >&2
     exit 1
   fi
-  echo "Omi bridge is stopped."
+  echo "Vexo caption bridge is stopped."
   exit 1
 fi
 
@@ -267,10 +267,10 @@ if [ "$ACTION" = restart ] || [ "$ACTION" = restart-clean ]; then
   fi
 elif PID="$(tracked_pid)"; then
   if health_matches "$PID"; then
-    echo "Omi bridge is already running and healthy (PID $PID)."
+    echo "Vexo caption bridge is already running and healthy (PID $PID)."
     exit 0
   fi
-  echo "Omi bridge PID $PID does not report healthy Python 3.15; migrate/restart and inspect $CONSOLE_LOG." >&2
+  echo "Vexo caption bridge PID $PID does not report healthy Python 3.15; migrate/restart and inspect $CONSOLE_LOG." >&2
   exit 1
 fi
 
@@ -294,7 +294,7 @@ for _ in {1..20}; do
   sleep 0.1
 done
 if ! is_bridge_process "$PID"; then
-  echo "Omi bridge failed to start. Inspect $CONSOLE_LOG." >&2
+  echo "Vexo caption bridge failed to start. Inspect $CONSOLE_LOG." >&2
   rm -f "$PID_FILE" "$IDENTITY_FILE"
   exit 1
 fi
@@ -302,7 +302,7 @@ fi
 
 for _ in {1..30}; do
   if health_matches "$PID"; then
-    echo "Omi bridge started and healthy (PID $PID)."
+    echo "Vexo caption bridge started and healthy (PID $PID)."
     echo "Runtime:        $RUNTIME_INFO"
     echo "Health:         http://127.0.0.1:8788/health"
     echo "Transcript events: $DIR/logs/omi_transcript_events.jsonl"
@@ -313,5 +313,5 @@ for _ in {1..30}; do
   is_bridge_process "$PID" || break
   sleep 1
 done
-echo "Omi bridge did not become healthy. Inspect $CONSOLE_LOG (PID $PID)." >&2
+echo "Vexo caption bridge did not become healthy. Inspect $CONSOLE_LOG (PID $PID)." >&2
 exit 1

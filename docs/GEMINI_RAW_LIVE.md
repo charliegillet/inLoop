@@ -1,5 +1,7 @@
 # Raw Vexo motion → Gemini Decision live preview
 
+Normal captions remain **Vexo band 43 → Bluetooth → this Mac → Pipecat + Deepgram → saved captions / inLoop**. The single owner in `vexo_source.py` also publishes local motion snapshots. `scripts/live_gemini_motion.py` sends motion windows to `gemini-decision-1` through the Decisions API for advisory motion labels. This script does not transcribe audio or extract tasks. Separately, `inloop_app.py` uses the same Decision model to classify finalized speech as `none`, `todo`, `calendar`, or `action_item`, preserving source wording rather than generating task text. Calendar candidates remain review-only; no calendar is written.
+
 This is the current live experiment. It does **not** use the earlier calibration as a reference. That recorded reference remains on disk for historical comparisons, but the live preview never reads it.
 
 Run the launcher prepared on this Mac:

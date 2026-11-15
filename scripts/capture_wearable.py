@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.15
-"""Explicitly record up to ten seconds of newly received Omi audio locally.
+"""Explicitly record up to ten seconds of newly received wearable audio locally.
 
 No recording occurs without --record. This client uses loopback health and one
 verified local signal; it does not access credentials or upload captured audio.
@@ -95,7 +95,7 @@ def wait_for_audio(first_health, expected_pid, *, get_health, clock, sleep):
         if valid_count and (baseline is None or count < baseline):
             baseline = count
         sleep(min(.1, max(0, deadline-clock())))
-    raise CaptureError("Phone audio did not advance within 3 seconds; reconnect Omi and try again; no signal sent")
+    raise CaptureError("Wearable audio did not advance within 3 seconds; check the Vexo source and try again; no signal sent")
 
 
 def record_capture(*, get_health=None, process_identity=None, send_signal=None,
@@ -116,7 +116,7 @@ def record_capture(*, get_health=None, process_identity=None, send_signal=None,
             or previous.get("state") == "recording"):
         raise CaptureError("Bridge identity or capture state changed; no signal sent")
     previous_id = previous.get("capture_id")
-    announce("Recording up to 10 seconds of newly received Omi audio locally.")
+    announce("Recording up to 10 seconds of newly received wearable audio locally.")
     send_signal(second_pid, signal.SIGUSR1)
     deadline = clock() + WAIT_SECONDS
     while clock() < deadline:

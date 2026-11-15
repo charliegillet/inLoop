@@ -4,6 +4,10 @@ Checked on this Mac on 14 November 2026. This is an account-access check and a s
 
 **Current live experiment:** the user requested reference-free classification after this benchmark. [The raw live preview](GEMINI_RAW_LIVE.md) sends all received six-axis samples in each window directly to Gemini, without reading this calibration. The reference-backed results below are historical comparisons, not a required input or an endorsement of that calibration's correctness.
 
+## Place in the current stack
+
+Normal operation is **Vexo band 43 → Bluetooth → this Mac → Pipecat + Deepgram → saved captions / inLoop**. `vexo_source.py` is the single Bluetooth owner. `gemini-decision-1` serves two separate consumers: `scripts/live_gemini_motion.py` scores motion labels from local snapshots, and `inloop_app.py` classifies finalized speech as `none`, `todo`, `calendar`, or `action_item`. The inLoop path preserves source wording for resulting items; Decision scores fixed choices rather than generating task descriptions, event dates, or invitations. Calendar candidates remain review-only and do not create calendar events. This document's benchmarks concern motion classification only. Local Mac pointer/scroll control remains in `motion_control.py`, separate from these cloud decisions.
+
 ## Model discovery and access
 
 The credential supplied by the user was read from its existing private environment file, using only the Google/Gemini key variable. It was sent in the official API header, never printed or copied into project configuration. The paginated `v1beta/models` endpoint returned **64 models**. The complete private inventory is `logs/gemini-models-20261114.md`, with JSON metadata beside it.
@@ -49,7 +53,7 @@ If “model information” means an XML hardware or body model, it may add usefu
 
 The official structured-data guidance serializes JSON as text in the shared input. Requests still use the documented JSON API envelope and typed questions. Each choice should have a clear description. [Structured-data input](https://aistudio.google.com/docs/decisions-api#structured-data)
 
-## Recommended pipeline
+## Proposed motion-to-action integration (not the running caption stack)
 
 ```text
 Vexo → existing Bluetooth owner → local motion processing
@@ -63,7 +67,7 @@ Keep gravity/gyro processing, cursor velocity, neutral stop, emergency pause and
 
 Use one in-flight decision at most, reject obsolete responses after a mode/source change, and send requests only on candidate events. Keep the input limited to motion and explicitly chosen context. A probability threshold, a margin between the best two choices, cooldown and an unknown/no-action route are candidate policies that need wearer evaluation. Greater apparent decisiveness obtained by simply lowering a threshold can increase accidental commands.
 
-Persist the personal profile locally and reuse it. A short neutral/mounting check after putting the band on can be much less work than repeating all 17 trials. Recalibrate directions after a material fit or posture change. This is the proposed next calibration UX; the running controller still uses its explicit C/X/Y setup and does not automatically trust a profile across reconnects.
+For a future profile the wearer has accepted, persist it locally and reuse it. The rejected 17-trial calibration is not the current raw preview's input. A short neutral/mounting check after putting the band on can be much less work than repeating all 17 trials. Recalibrate directions after a material fit or posture change. This is the proposed next calibration UX; the running controller still uses its explicit C/X/Y setup and does not automatically trust a profile across reconnects.
 
 Decision 1 does not support context caching, so include only compact necessary reference features per request. Keep large reference files and ordinary sensor math local. [Model capability table](https://aistudio.google.com/docs/models/gemini-decision-1)
 
@@ -71,11 +75,11 @@ For “natural control,” also consider clear mode feedback and a clutch/recent
 
 ## Cost and quotas
 
-Google's current paid list price is **$0.10 per million input tokens**, with zero output tokens billed. The latest 24-call run used 29,614 input tokens, equivalent to about **$0.003 at that list price**. This is arithmetic, not a bill or confirmation of this account's billing tier. The initial run and smoke are additional small calls. [Official pricing](https://aistudio.google.com/docs/pricing#gemini-decision)
+The paid list price recorded on 14 November 2026 was **$0.10 per million input tokens**, with zero output tokens billed. The latest 24-call run used 29,614 input tokens, equivalent to about **$0.003 at that list price**. This is arithmetic, not a bill or confirmation of this account's billing tier. The initial run and smoke are additional small calls. [Official pricing](https://aistudio.google.com/docs/pricing#gemini-decision)
 
 At roughly 1,109 input tokens/request in our reference JSON condition, five event-triggered requests/minute would be about $0.033/hour at the paid list price. Sending 25 requests/second would instead be about $10/hour and would require 1,500 RPM and roughly 1.66M TPM. Input length and actual request frequency determine cost.
 
-The documented free limits are 200 RPM / 50,000 TPM / 10,000 RPD; Tier 1 is 1,500 RPM / 1M TPM / 50,000 RPD. Thus a frame-by-frame 25 Hz design exceeds even Tier 1's documented token budget at this input size. Account quotas may differ; inspect AI Studio for the project. [Official rate limits](https://aistudio.google.com/docs/rate-limits#gemini-decision)
+The free limits recorded on 14 November 2026 were 200 RPM / 50,000 TPM / 10,000 RPD; Tier 1 is 1,500 RPM / 1M TPM / 50,000 RPD. Thus a frame-by-frame 25 Hz design exceeds even Tier 1's documented token budget at this input size. Account quotas may differ; inspect AI Studio for the project. [Official rate limits](https://aistudio.google.com/docs/rate-limits#gemini-decision)
 
 ## Reproduce
 

@@ -1,9 +1,13 @@
-# Live motion training
+# Live Vexo motion training
+
+The normal caption stack is **Vexo band 43 → Bluetooth → this Mac → Pipecat + Deepgram → saved captions / inLoop**. `vexo_source.py` owns the band connection; motion tools consume its local telemetry and do not replace the speech pipeline.
+
+`gemini-decision-1` has two separate roles: the [motion preview](GEMINI_RAW_LIVE.md) classifies IMU windows, while `inloop_app.py` classifies finalized transcript segments as `none`, `todo`, `calendar`, or `action_item`. inLoop retains source wording for resulting items; Decision scores these fixed choices rather than generating task text. Calendar candidates stay review-only and do not write to a calendar. Neither role is the local pointer-control loop.
 
 From the Mac checkout, with the existing Vexo capture running:
 
 ```sh
-./omi motion
+./vexo motion
 ```
 
 The display shows accelerometer (g), gyroscope (degrees/second), roll/pitch,
@@ -13,7 +17,7 @@ A three-reversal gyro heuristic displays a wave candidate. It has not been train
 or validated as an intentional gesture classifier.
 
 The default viewer only displays motion. Actual Mac controls are explicitly available
-with `./omi motion --control`, as described below.
+with `./vexo motion --control`, as described below.
 
 - Hold your wrist comfortably and press `c` to calibrate its neutral orientation.
 - Use `+`/`-` to adjust preview sensitivity (0.1–3x).
@@ -24,7 +28,7 @@ with `./omi motion --control`, as described below.
 - `q` or Ctrl+C closes the view. Capture/captions continue; motion/events turn off
   when the monitor's three-second lease expires.
 
-`./omi motion --json --seconds 10` streams local telemetry/proposals for inspection.
+`./vexo motion --json --seconds 10` streams local telemetry/proposals for inspection.
 It does not record or expose microphone audio. Do not run a second Bluetooth client.
 The existing owner enables 25 Hz motion and events only while the view is active.
 It updates a private atomic snapshot at up to 10 Hz, with a 30-event ring. The view
@@ -36,7 +40,7 @@ The viewer and capture each retain a process lock to avoid duplicate owners.
 ## Control the actual Mac
 
 ```sh
-./omi motion --control
+./vexo motion --control
 ```
 
 The control window starts paused. Allow the launching terminal (normally Terminal)
@@ -61,8 +65,8 @@ Motion sampling currently stays at 25 Hz alongside captions. Control snapshots p
 at up to 25 Hz and the control loop polls around 50 Hz. A live attempt at 50 Hz sensor
 sampling showed repeated packet gaps, so that rate was rolled back pending diagnosis.
 These rates are not a physical latency or accuracy measurement. The saved left-wrist
-noise reference supplies the initial 5.52-degree dead zone; fresh axes adapt to current
-posture. See [the research and training plan](VEXO_CONTROL_RESEARCH.md).
+noise reference can supply the initial dead zone (5.52 degrees in the recorded session); fresh axes adapt to current
+posture. This is legacy controller behavior, not approval of that reference: the wearer rejected the old calibration as a trusted motion-classification input. The raw Gemini preview never reads it. See [the research and training plan](VEXO_CONTROL_RESEARCH.md).
 
 ## Expand control deliberately
 
@@ -87,7 +91,7 @@ a proposal; these motion tools do not implement that application.
 ## Guided left-wrist reference
 
 ```sh
-./omi motion --calibrate --hand left
+./vexo motion --calibrate --hand left
 ```
 
 From the regular view, `r` opens the guided reference too. Each trial waits for Space
@@ -122,7 +126,7 @@ responses must be assessed before selecting mappings. Absolute angular speed alo
 can confuse deliberate waves with scroll motions.
 
 The Bluetooth owner also requests the band's battery stream every 60 seconds.
-`./omi status --json` includes fresh battery percent, charging state and voltage;
+`./vexo status --json` includes fresh battery percent, charging state and voltage;
 stale/disconnected readings are omitted. This does not open a competing USB or BLE
 connection. With the motion view closed, the private status snapshot is updated at
 most once per second, and motion/event streams remain off.

@@ -1,19 +1,60 @@
 # inLoop
 
-Run `./inloop` from the project directory, or double-click `inLoop.command`.
-The launcher starts the local app when needed and opens <http://127.0.0.1:8790>.
-Use `./inloop --no-open` to start without opening a browser. No frontend build or npm runtime is needed.
+A local Mac workspace for Vexo speech, action suggestions, GPS, GitHub, and phone Health.
 
-inLoop reads the existing caption stream; it does not open another Bluetooth connection or start/stop microphone capture. Keep the existing capture service running. Closing the browser leaves capture and the local app running.
+## Open
 
-The interface uses real caption, device, GPS and Health data where available, plus read-only open issues and PRs involving your GitHub account (yhinai). The connected Android phone supplies GPS and Health Connect readings directly over authorized ADB, using a private snapshot refreshed every five seconds. Each Health reading retains its own measurement timestamp. Missing readings remain unavailable. The device list shows the Mac LAN IP and phone Wi-Fi IP; the Mac’s Tailscale IP is available in its tooltip. GPS matches use recorded fixes at or before the selected speech time; older speech may have no matching fix. Audio processing uses Deepgram and automatic task suggestions use finalized transcript text sent to Gemini.
+```sh
+./inloop
+```
 
-App-only logs: `logs/inloop-app.log`. Saved sessions, tasks and GPS fixes are stored in the private `logs/inloop-app.sqlite3` database. Nothing is deployed to or written to alhinai.dev. On desktop the dashboard fits the viewport; long lists and the transcript scroll independently.
+Or double-click `inLoop.command`. The launcher starts the app and opens <http://127.0.0.1:8790>. `./inloop --no-open` starts it without opening a browser. No frontend build or npm runtime is required.
 
-The phone update preserves the existing website and direct-Mac uploads. Its additive source patch and rebuild notes are in `scripts/inloop-phone-snapshot.patch` and `scripts/inloop-phone-snapshot.md`. APKs, signing keys, snapshots, and readings stay private under ignored logs. No motion recognizer was changed.
+Capture must already be running. Inspect it with `./vexo status` and `./vexo check`. The dashboard reads the existing caption stream; it does not create a second Bluetooth connection. Closing the browser leaves capture running.
 
-## Google Maps
+## Speech and decisions
 
-Location uses Google satellite imagery with the selected phone GPS fix. Google 3D Maps is enabled when `GOOGLE_MAPS_BROWSER_KEY` is set in the local `.env` to a **browser Maps key authorized for `http://127.0.0.1:8790/*`** with the required Maps JavaScript/3D access. This is a browser-visible key; never use the Gemini/server API key here. Refresh inLoop after configuring it. The existing website key rejects localhost, so the app keeps a working Google satellite map when no local 3D key is configured. No website key restrictions are changed.
+```text
+Vexo band 43 → Bluetooth → Mac → Pipecat → Deepgram Nova-3
+                                              ↓
+                                  Transcript + speaker labels
+                                              ↓
+                                     gemini-decision-1
+                                              ↓
+                           To-do / Calendar suggestion / Action item
+```
 
-The interface follows the personal website palette and uses headings above the cards. Live drafts and finalized captions appear newest first at the top. Scrolling into older speech preserves the visible passage as new entries arrive; “New speech ↑” returns to the latest speech.
+- **Vexo** supplies microphone audio directly to the Mac. The phone is not an audio relay.
+- **Pipecat** runs the streaming Deepgram service in its isolated worker. The bridge owns source timing, reconnect handling, and persisted finals.
+- **Deepgram** provides transcription and speaker diarization. `Speaker 1` distinguishes a voice within its recognition session; it is not verified personal identity.
+- **Gemini Decision 1** classifies finalized transcript candidates as `none`, `todo`, `calendar`, or `action_item`. The title and quote come from the original text; there is no free-form generation or Flash-Lite fallback. Only validated decisions meeting the confidence threshold create suggestions.
+
+Calendar items are local suggestions for review. No calendar event is created, and no outside action is performed automatically. Old and manually added tasks retain their original provenance.
+
+The [Decisions API](https://aistudio.google.com/docs/decisions-api) returns fixed choices and scores rather than generated prose. Motion experiments also use Gemini Decision, through a separate preview path; they do not replace the speech/action pipeline above.
+
+## Read and review
+
+Live drafts and saved captions appear **newest first**. Scrolling into older speech keeps the visible passage stable as new entries arrive. `New speech ↑` returns to the top. Select a final passage or task source to inspect its matching GPS fix.
+
+Tasks can be added, completed, edited, or deleted locally. GitHub reads open issues and PRs involving the configured account (`yhinai`); it does not change them. Refresh failures retain cached results and label them accordingly.
+
+## GPS, Health, and devices
+
+The phone supplies GPS and Android Health Connect data separately from speech. When attached and authorized, ADB reads a private snapshot refreshed every five seconds. Without USB, the existing authenticated Tailscale receiver and website telemetry remain fallbacks.
+
+Each Health reading keeps its own measurement timestamp. Missing readings remain unavailable. A recent upload is not proof that an individual sensor reading is new. GPS matches use fixes recorded at or before speech; older speech can have no matching fix.
+
+The device list shows the Mac LAN IP and phone Wi-Fi IP. The Mac's Tailscale IP is available in its tooltip. Phone IPs are network metadata, not the Bluetooth audio route.
+
+The additive phone update preserves existing website and direct-Mac uploads. See the [ADB snapshot notes](../scripts/inloop-phone-snapshot.md) and [wireless phone telemetry](PHONE_TAILSCALE.md). APKs, keystores, credentials, build output, and personal data stay private under ignored paths.
+
+## Maps
+
+Location uses Google satellite imagery for the selected phone fix. Interactive 3D is enabled when private `.env` contains a browser Maps key authorized for localhost and the necessary Maps access. This browser-visible key is separate from Gemini's server key. Without a configured local 3D key, satellite embedding remains available. No personal-site key restrictions are changed.
+
+## Storage and privacy
+
+Audio is processed by Deepgram. Finalized transcript candidates are sent to Gemini Decision for classification. App state uses private `logs/inloop-app.sqlite3`; app logs use `logs/inloop-app.log`. The caption bridge also retains its authoritative journal and daily notes. Do not publish these files or credentials.
+
+The interface follows the personal site's palette and headings above cards. Desktop content fits the viewport; long lists and the transcript scroll independently. This app does not deploy or write changes to alhinai.dev.

@@ -236,7 +236,7 @@ class CaptureClientTests(unittest.TestCase):
                     count += 1
                     options = {"packets": 100 if not fields else count, **fields}
                     return health(**options)
-                with self.assertRaisesRegex(cli.CaptureError, "Phone audio did not advance"):
+                with self.assertRaisesRegex(cli.CaptureError, "Wearable audio did not advance"):
                     self.record([], get_health=not_ready)
                 self.signal.assert_not_called()
                 self.announce.assert_not_called()

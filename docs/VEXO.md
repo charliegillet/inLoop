@@ -1,5 +1,7 @@
 # Vexo Bluetooth and USB captions on macOS
 
+The active route is **Vexo band 43 → Bluetooth → Mac → Pipecat → Deepgram Nova-3 → inLoop**, with Deepgram diarization enabled. The phone supplies GPS and Health separately; it is not the audio source.
+
 The Vexo source and recognition backend are separate choices. The input command uses
 Python 3.14, Bleak, pyserial and PyAV; the existing Python 3.15 bridge still owns recognition,
 session/sample clocks, immutable save retries, journal and caption delivery.
@@ -11,20 +13,21 @@ The MIT-licensed upstream SDK is pinned by `vendor/vexo-open-kit` at revision
 `1e4291e2fa4896b1f603d3d4f0b009c483425da0`; attribution remains in its LICENSE.
 
 Create `.venv-vexo` using Python 3.14, then install `requirements-vexo.txt -c requirements-vexo.lock`.
-Create the bridge, Pipecat and Whisper environments as described in OPERATIONS.md.
+Create the bridge and Pipecat environments as described in OPERATIONS.md. The optional legacy Whisper environment is not needed for the active setup.
 Use private `.env` settings; do not copy installed environments between machines.
 Set `OMI_HOST=127.0.0.1`, `OMI_STT_BACKEND=deepgram`,
-`OMI_DEEPGRAM_PIPELINE=pipecat`, `OMI_LANGUAGE=en`, `OMI_LANGUAGES=en`.
+`OMI_DEEPGRAM_PIPELINE=pipecat`, `OMI_DEEPGRAM_DIARIZE=true`, `OMI_LANGUAGE=en`, `OMI_LANGUAGES=en`.
+The Nova-3 model is the adapter default (`OMI_DEEPGRAM_MODEL=nova-3` when explicit).
 Deepgram requires a valid private key; never reuse an event key exposed in chat.
 Ask the organisers to replace an exposed key.
 
 ## Operate
 
-Disconnect the browser dashboard, then double-tap band 43 so it blinks blue. In the checkout:
+If another browser/serial client owns the band, disconnect that client first. Double-tap band 43 so it blinks blue. In the checkout:
 
 ```sh
-./omi start
-./omi source vexo --band 43 --transport ble
+./vexo start
+./vexo source vexo --band 43 --transport ble
 ```
 
 Bluetooth is the primary wireless connection. USB may remain connected for charging;
@@ -33,21 +36,19 @@ be found, double-tap it again to reopen its 60-second discovery window. Grant ma
 Bluetooth access to the calling app if prompted. Do not pair in System Settings.
 
 For the USB fallback, stop Bluetooth capture and run
-`./omi source vexo --band 43 --transport serial`.
+`./vexo source vexo --band 43 --transport serial`.
 
 The source command runs in the foreground. Ctrl+C disables the microphone, closes the device connection,
 drains queued PCM, sends CloseStream and waits for bridge completion. From another terminal:
 
 ```sh
-./omi status
-./omi captions
-./omi verify --phrase 'silver otter carries' --timeout 60
+./vexo status
+./inloop
+./vexo captions
+./vexo verify --phrase 'silver otter carries' --timeout 60
 ```
 
-Stop capture before `./omi stop` or changing recognizers. Select local recognition with
-`./omi backend whisper`; select cloud recognition with `./omi backend deepgram`.
-Set `OMI_DEEPGRAM_PIPELINE=direct` in private `.env` and restart to use direct Deepgram.
-There is no silent cloud/local fallback. Start capture again after the switch.
+Use `./inloop` to open the local web app; `./vexo captions` is the optional terminal viewer. Stop capture before `./vexo stop` or any explicit backend switch. The current route is Pipecat/Deepgram; direct Deepgram and local Whisper remain explicit alternatives outside the active setup. There is no silent cloud/local fallback. See [operations](OPERATIONS.md#legacy-alternatives) before changing the route.
 
 Raw audio is not recorded. The blue light means the microphone is on. With Deepgram
 selected, nearby sound is sent to that company; tell people nearby before enabling it.
@@ -83,12 +84,11 @@ There is no automatic launch-at-login setup in the generic source command.
 ## Checks
 
 ```sh
-./omi dev test -q
-./omi dev faults
+./vexo dev test -q
+./vexo dev faults
 .venv-pipecat/bin/python -B -m unittest discover -s tests -p test_pipecat_runtime.py -q
 .venv-vexo/bin/python -m unittest scripts.test_vexo_capture -q
-./omi dev smoke --backend deepgram --pipeline pipecat
-./omi dev smoke --backend whisper
+./vexo dev smoke --backend deepgram --pipeline pipecat
 ```
 
 The capture checks exercise real Opus decoding of upstream sample audio, exact sample
@@ -97,12 +97,9 @@ microphone shutdown/PCM drain. Core tests cover source ownership and late-final 
 existing faults cover save recovery and deduplication. They do not prove physical unplug
 recovery or arbitrary slow-consumer behavior on hardware.
 
-Keep the former deployment and its history intact until target validation and a consistent
-final history transfer are complete. Stop the old writer before final synchronization;
-never rsync over a target journal that already contains new events. Preserve both sets
-by event identity, retain original journals, and verify daily projections before cutover.
+The Mac is the active deployment; the former Mini writer and its Omi-specific autostart/tunnel jobs are stopped. Retain recovery copies and never rsync old journals over the Mac's newer events. Historical migrations must reconcile by immutable event identity.
 
-## Verified migration scope
+## Historical migration verification scope
 
 On the target Mac, core discovery passed 424 tests (two optional runtime tests skipped);
 the two runtime tests passed separately in the Pipecat environment. All eight existing
@@ -120,12 +117,12 @@ readability was not independently assessed. Physical unplug/replug was not perfo
 
 The target's five migrated model files were verified against SHA-256 hashes from the
 source installation. Its isolated Whisper smoke produced a final with matching JSONL
-and Markdown. The actual `./omi backend whisper` / `./omi backend deepgram` switch
+and Markdown. The actual `./vexo backend whisper` / `./vexo backend deepgram` switch
 commands were then exercised with capture stopped, returning to Pipecat/Deepgram.
 Whisper was verified with synthetic speech, not the live band phrase.
 
 
-## Bluetooth verification
+## Bluetooth verification and current transport
 
 Bluetooth uses the same PCM queues, Opus decoder, authentication and recognizer path.
 `X-Vexo-Transport` binds `ble` or `serial` to the input session and saved final provenance.
@@ -140,3 +137,9 @@ overflowed or discarded packets. Its spoken test sentence produced a Bluetooth-t
 Pipecat final, verified in authenticated caption replay, JSONL, Markdown and viewer
 layout. Recognition omitted one article; this was input/persistence verification,
 not an accuracy benchmark. Normal stop disabled the microphone and drained the bridge.
+
+## App and motion scope
+
+inLoop reads the existing caption WebSocket and the phone's GPS/Health snapshots, then shows transcript-linked items and read-only GitHub issues/PRs. Deepgram Nova-3 supplies speech and anonymous speaker turns. The app uses `gemini-decision-1` through the Decisions API to classify finalized-text candidates as `none`, `todo`, `calendar`, or `action_item`. Titles keep exact source wording; Decision does not generate task descriptions or event details. Calendar candidates remain review-only, with no calendar writes, invitations or automatic task execution.
+
+The existing standalone IMU preview uses `gemini-decision-1` and six-axis Vexo data. That optional motion workflow is separate from inLoop and has not been replaced or expanded by the web app. Its raw-motion preview does not inject Mac input. Screen-relative directions still need an appropriate fresh wearing-direction reference; raw accelerometer axes alone do not establish screen direction.

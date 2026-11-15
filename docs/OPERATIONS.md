@@ -1,36 +1,99 @@
 # Operation and recovery
 
-Run commands from the repository directory. `./omi` uses this repository's Python environment and configuration, regardless of the terminal's current environment. Explicit process environment variables override `.env`.
+The active setup is **Vexo band 43 → Bluetooth → this Mac → Pipecat → Deepgram Nova-3 → inLoop**, with Deepgram diarization enabled. The connected Android phone supplies GPS and Health data; it does not carry the band’s caption audio.
+
+Run commands from the repository directory. `./vexo` uses the project’s Python environment and configuration. Explicit process environment variables override `.env`. Existing `OMI_*` setting names and journal filenames are compatibility details and remain unchanged.
 
 ## Connect and read
 
-1. Run `./omi start` and `./omi status`.
-2. Connect the wearable in the Omi phone app.
-3. Run `./omi captions`. Use `d` for diagnostics, `g` to follow live text, `/` to search, and `q` to close the viewer. `b` bookmarks a passage, `[` and `]` navigate bookmarks, `B` copies bookmarks, and `e` exports Markdown.
+If the working source and bridge are already running, open `./inloop`; do not start a second source. Otherwise:
 
-Service status distinguishes service health, phone connection, recently received audio, recognizer state and saving. A healthy idle service does not prove microphone quality or recognition accuracy. For structured output use `./omi status --json`.
+1. Run `./vexo start` and `./vexo status`.
+2. Release any other client that owns band 43. Double-tap the band to open its Bluetooth discovery window, then run `./vexo source vexo --band 43 --transport ble` in a terminal.
+3. Run `./inloop` to open `http://127.0.0.1:8790`. It starts the local web server when needed, subscribes to existing captions and leaves capture ownership with the source process.
 
-The named Cloudflare tunnel is managed separately by the `com.alhinai.omi.tunnel` LaunchAgent. Check it with `launchctl print gui/$(id -u)/com.alhinai.omi.tunnel`. Tunnel logs are under `~/Library/Logs/OmiCloudflare/`; its credentials remain outside the repository. Tunnel setup on a new Mac is a separate provisioning step.
+USB may stay connected to the band for charging; BLE mode does not read its serial audio port. Keep the band near the Mac. The source command runs in the foreground; its Ctrl+C path disables the microphone, drains queued audio and closes the input session. No second Bluetooth connection is opened by inLoop.
 
-In the Omi app, choose Settings → Transcription → Cloud Provider → Custom (Live):
+`./vexo status --json` separates bridge health, input connection, fresh audio, provider state and saving. A healthy idle bridge does not establish microphone quality or recognition accuracy. Existing health fields may still say `phone` or `direct_ws`; for this setup their source identity is Vexo 43 over BLE.
 
-- URL: `wss://omi.alhinai.dev/v1/listen?token=<your stream token>`.
-- Streaming parameters: `encoding: linear16`, `sample_rate: 16000`, `channels: 1`.
-- Response mapping: `segments_path: segments`, fields `text`, `start`, `end`, and `text_path: text`.
-- Disable Developer Settings → Webhooks → Audio Bytes.
+The optional terminal viewer is `./vexo captions`: `d` diagnostics, `g` follow live, `/` search, `q` close; `b` bookmarks, `[` / `]` navigate, `B` copies and `e` exports. These are terminal tools, not controls added to the minimal web app.
 
-Use the token from your existing `.env`; do not publish it. Other device sources can use the same PCM contract, described in [architecture](ARCHITECTURE.md).
+## Active speech configuration
 
-## Select a recognizer
+The private configuration selects:
 
-```bash
-./omi backend deepgram
-./omi backend whisper
+```dotenv
+OMI_HOST=127.0.0.1
+OMI_STT_BACKEND=deepgram
+OMI_DEEPGRAM_PIPELINE=pipecat
+OMI_DEEPGRAM_MODEL=nova-3
+OMI_DEEPGRAM_DIARIZE=true
+OMI_LANGUAGE=en
+OMI_LANGUAGES=en
 ```
 
-The switcher validates the target and recovery configuration, serializes updates with the launcher, preserves unrelated `.env` bytes, restarts gracefully, and verifies health. Failed activation attempts recover the previous backend. Cloud switching with an active phone also verifies provider connection. Without phone audio, cloud recognition remains unverified until audio arrives. Power loss or forced termination cannot guarantee recovery.
+Nova-3 is also the adapter default when the model setting is absent. Deepgram performs speech recognition and anonymous speaker diarization. Speaker numbers are provisional/session-scoped labels, not verified personal identities. Nearby audio leaves the Mac for Deepgram. The current adapter supports fixed English and an English-only publication allowlist.
 
-Deepgram currently supports fixed English with an English-only publication allowlist. Audio leaves the Mac for the cloud. Whisper runs locally and requires native arm64 macOS, Python 3.14, its pinned requirements and the installed MLX Turbo/Silero assets. Model paths are configurable in `.env.example`. On a new Mac, create the optional worker with `python3.14 -m venv .venv-whisper`, then install `requirements-whisper.txt` using that environment's Python.
+Pipecat is the active orchestration, not a second recognizer. No Daily room, WebRTC server, LLM or TTS service is needed for this speech route. Its dependencies stay in `.venv-pipecat`, separate from the Python 3.15 bridge and Python 3.14 Vexo capture worker. On a new installation:
+
+```bash
+python3.14 -m venv .venv-pipecat
+.venv-pipecat/bin/python -m pip install -r requirements-pipecat.txt -c requirements-pipecat.lock
+```
+
+Pipecat is pinned to 1.16.0 and Deepgram SDK to 7.19.0. A small pinned-service subclass preserves raw result provenance, ordered drain metadata and source timestamps; the bridge owns retry, bounded replay and immutable save recovery. Upgrade the packages together with runtime tests and a fresh smoke check. Pipecat does not itself prove faster recognition: cold framework startup can delay the first caption.
+
+## GPS, Health, GitHub and tasks
+
+Phone data is a separate path. The installed `dev.alhinai.fliptracker` service writes a private atomic snapshot every five seconds. The Mac reads it over the authorized ADB connection; USB disconnection or stale snapshots are visible. The existing authenticated Tailscale phone ingress and read-only website telemetry are fallbacks. App source/freshness labels distinguish them. This does not change alhinai.dev.
+
+Each GPS fix and Health reading retains its measurement timestamp. A selected transcript can attach only a preceding GPS fix within ten minutes; a fix older than two minutes is last known. Historical speech without a suitable fix remains unmatched. Missing heart rate or sleep is not a zero reading. Phone Health data comes from its actual Health Connect/Fitbit sources, not from Vexo. See [the additive phone snapshot patch](../scripts/inloop-phone-snapshot.md) for rebuilding without losing signing identity, permissions or existing uploads.
+
+GitHub access is read-only through the existing authenticated CLI. The app lists the user's open involved issues and PRs across repositories. It does not create issues, submit reviews or merge PRs. Mac/phone network addresses are shown as actual device details, not assumed public IPs.
+
+Gemini Decision (`gemini-decision-1`, Decisions API) classifies exact-source sentence candidates from finalized transcript snippets as `none`, `todo`, `calendar`, or `action_item`. Resulting titles retain the spoken wording instead of a generated rewrite. Source identity and exact supporting text are checked before storage; a provisional confidence threshold rejects low-score candidates. Calendar items are suggestions for review, not booked events: the app does not write to calendars, send invitations or execute tasks. The separate optional `scripts/live_gemini_motion.py` preview uses the same Decision model for Vexo IMU movement labels. The web app does not add or change motion control or emotion classification.
+
+## Diagnose a problem
+
+```bash
+./vexo check
+./vexo verify --phrase "Blue lantern seven" --timeout 60
+```
+
+`check` reads configuration, package metadata and local health without sending audio. `verify` observes authenticated captions and packet progress. Wait for its subscription-ready message, then speak. Only a new matching final is checked in the journal, Markdown and a fresh viewer. Old terminal painting, physical microphone identity and pre-bridge delay require separate observation.
+
+Viewer diagnostics distinguish segment receipt age from estimated word-end delay. Starred word-end metrics use the bridge receipt clock and exclude upstream wearable delay. A growing `phone_delivery_errors` health counter describes the legacy phone reply path, not loss of the separate journal or caption subscription.
+
+For intentional input recording, run `./vexo dev capture --record --wait-for-enter`. Press Enter and speak after its countdown and Recording message. It requires fresh advancing audio and records at most ten seconds to a private `0600` WAV under `~/Library/Application Support/OmiDiagnostics/`. Listen for the intended words before scoring recognition. There is no public audio-download endpoint. Normal Vexo operation does not record raw audio.
+
+## Stop, restart and history
+
+Stop the foreground Vexo capture before `./vexo stop`, `./vexo restart` or an explicit backend switch. The bridge drains accepted audio. Existing finals live in `logs/omi_transcript_events.jsonl` and daily Markdown; inLoop keeps its workspace in `logs/inloop-app.sqlite3`. Closing a browser window only closes that viewer; it does not turn off the microphone or stop the capture process.
+
+The journal is authoritative; Markdown is its readable projection. Unsaved finals and pending PCM are memory-only, so a full crash or power loss can lose them. Preserve `.env`, transcripts, databases, model assets, credentials and private phone builds outside source control. Avoid history resets and do not overwrite the current journal with Mini recovery files.
+
+## Explicit developer tools
+
+```bash
+./vexo dev test -q
+./vexo dev faults
+./vexo dev smoke --backend deepgram --pipeline pipecat
+.venv-pipecat/bin/python -B -m unittest discover -s tests -p test_pipecat_runtime.py -q
+.venv-vexo/bin/python -m unittest scripts.test_vexo_capture -q
+```
+
+Smoke checks use temporary ports and synthesized or supplied test audio, not the production microphone. Cloud checks upload that test audio. The fault runner exercises eight deterministic fault/corruption scenarios. The paired benchmark is `./vexo dev benchmark`; reports retain exact source/configuration and are not current live-band latency guarantees.
+
+## Legacy alternatives
+
+The following remain supported compatibility tools outside the active Vexo/BLE/Pipecat/inLoop setup; none is an automatic fallback:
+
+- USB audio: stop BLE capture, then run `./vexo source vexo --band 43 --transport serial`.
+- Direct Deepgram: set `OMI_DEEPGRAM_PIPELINE=direct` privately, then restart with capture stopped.
+- Local Whisper: explicitly select `./vexo backend whisper`; return with `./vexo backend deepgram`. The switcher validates configuration, serializes updates, gracefully restarts and verifies health; failed activation recovers the prior backend when possible. Forced termination or power loss cannot guarantee recovery.
+- Official Omi phone-audio compatibility and the old Cloudflare tunnel remain separate from Vexo caption input. Do not provision or enable them for inLoop. The Mini's old writer and Omi-specific autostart/tunnel jobs are disabled.
+
+Whisper runs locally and requires native arm64 macOS, Python 3.14, its pinned requirements and the installed MLX Turbo/Silero assets. Model paths are configurable in `.env.example`. On a new Mac, create the optional worker with `python3.14 -m venv .venv-whisper`, then install `requirements-whisper.txt` using that environment's Python.
 
 Restore the pinned assets into `~/Library/Application Support/OmiWhisper/`: Whisper `config.json` and `weights.safetensors` go in `whisper-turbo/`; Silero goes in `silero_vad.onnx`.
 
@@ -41,75 +104,5 @@ Restore the pinned assets into `~/Library/Application Support/OmiWhisper/`: Whis
 
 The Silero SHA-256 is `1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3`. Existing installations need no model download.
 
-## Optional Pipecat orchestration
 
-Pipecat is opt-in within the Deepgram backend. Whisper remains unchanged. No Daily room, WebRTC server, LLM, TTS service or phone-app modification is required for this caption pipeline.
-
-On this Mac, prepare a separate environment using the existing Python 3.14 worker interpreter:
-
-```bash
-.venv-whisper/bin/python -m venv .venv-pipecat
-.venv-pipecat/bin/python -m pip install -r requirements-pipecat.txt -c requirements-pipecat.lock
-```
-
-On a new installation, use a standard Python 3.14 interpreter to create that environment. The Pipecat dependencies stay separate from the bridge and local Whisper environments.
-
-Test on temporary ports with synthesized audio:
-
-```bash
-./omi dev smoke --backend deepgram --pipeline pipecat
-.venv-pipecat/bin/python -B -m unittest discover -s tests -p test_pipecat_runtime.py -q
-```
-
-The smoke report identifies `pipeline: pipecat`, library versions, processed audio/transcription frame counts, provider model and successful JSONL/Markdown verification. This is a controlled pipeline check, not a live-wearable accuracy claim.
-
-For a future live activation, set `OMI_DEEPGRAM_PIPELINE=pipecat` in `.env` while keeping `OMI_STT_BACKEND=deepgram`, then run `./omi restart` when interruption is acceptable. Set the pipeline back to `direct` and restart to return to the direct adapter. `./omi backend whisper` remains the local fallback. `./omi check`, health and viewer diagnostics show the selected orchestration after activation. No automatic provider/pipeline fallback is enabled.
-
-Pipecat is pinned to 1.16.0 and Deepgram SDK to 7.19.0. The worker uses a small pinned-service subclass to forward raw result provenance and drain metadata in pipeline order and to prevent hidden reconnects from resetting source timestamps. Omi owns retry, bounded replay and immutable save recovery. Upgrade those packages together with the optional runtime tests and a fresh smoke check. `pipeline_start_sec` includes optional-process/framework startup; `provider_connect_sec` measures the SDK connection separately. Cold pipeline startup can delay the first caption, so this integration is not presented as a speed improvement.
-
-[Pipecat Deepgram service documentation](https://docs.pipecat.ai/api-reference/server/services/stt/deepgram) describes the upstream service. The CLI/context-hub shown on the hackathon slide is development tooling and is not needed at runtime.
-
-## Diagnose a problem
-
-```bash
-./omi check
-./omi verify --public
-```
-
-`check` reads configuration, package metadata and local health without sending audio. `verify` observes authenticated captions and packet progress; `--public` checks that unauthenticated public caption access is denied. Its report distinguishes observed, failed and untested stages.
-
-Viewer diagnostics (`d`) distinguish segment receipt age from estimated word-end delay. The starred word-end values use the bridge receipt clock and exclude upstream wearable delay. A growing `phone_delivery_errors` health counter means phone replies stalled; that connection closes for reconnection while the journal and caption viewers retain their own delivery path.
-
-For a deliberate phrase check:
-
-```bash
-./omi verify --phrase "Blue lantern seven" --timeout 60
-```
-
-Wait for the subscription-ready message, then speak. Only a new matching final is checked in the journal, Markdown and a fresh Viewer. Existing terminal painting, physical microphone identity and pre-bridge delay require separate observation.
-
-If the intended words are missing, first verify input with an intentional recording:
-
-```bash
-./omi dev capture --record --wait-for-enter
-```
-
-In a real terminal, press Enter and speak after the countdown and Recording message. Capture requires fresh advancing phone audio and ends after at most ten seconds. A private WAV is saved under `~/Library/Application Support/OmiDiagnostics/` with mode `0600`. Listen for the intended words before scoring recognition. There is no public audio-download endpoint.
-
-The earlier diagnostic clip lacked the intended phrase, as confirmed by the user. Its recognition comparison is inconclusive; it does not establish a microphone fault or recognition failure.
-
-## Stop, restart and history
-
-`./omi stop` drains accepted audio and stops the bridge. `./omi restart` preserves history. Finals live in `logs/omi_transcript_events.jsonl` and `logs/YYYY-MM-DD.md`. Diagnostic process logs are separate. Keep `.env`, transcripts and model assets out of source control.
-
-The journal is authoritative; Markdown is a readable projection. Unsaved finals and pending PCM are memory-only, so a complete process crash or power loss can lose them. Avoid history-reset commands during routine operation.
-
-## Explicit developer tools
-
-- `./omi dev test -q`: offline regressions.
-- `./omi dev faults`: eight deterministic fault/corruption scenarios, without model/audio-fixture generation.
-- `./omi dev smoke --backend whisper|deepgram`: temporary complete recognition pipeline; no production ports or notes are used. Cloud selection uploads synthesized or supplied test audio.
-- `./omi dev benchmark --backends whisper,deepgram`: explicit paired synthetic benchmark; uploads test audio to the selected cloud provider.
-- `./omi dev demo --recorded-audio`: labeled recorded-audio fallback through real local Whisper, using temporary ports and notes. A plain `demo` uses synthetic caption fixtures and performs no recognition.
-
-The superseded extended Whisper fixture generator is retired in the [recovery archive](archive/README.md). The maintained paired benchmark is `./omi dev benchmark`; recorded demonstrations use the bundled synthesized `assets/demo.wav`. Reports describe their exact source/configuration and input; historical timings are not current performance guarantees.
+The superseded extended Whisper fixture generator remains in the [recovery archive](archive/README.md). Existing installations need no new download merely to run inLoop. No legacy path should be described as the current audio source without checking actual source identity and backend health.

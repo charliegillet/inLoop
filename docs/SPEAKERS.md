@@ -1,5 +1,7 @@
 # Speaker separation and your voice
 
+The normal stack is **Vexo band 43 → Bluetooth → this Mac → Pipecat + Deepgram → saved captions / inLoop**. `vexo_source.py` owns the single band connection. Deepgram supplies transcription and diarization; optional voice matching below runs locally. Gemini Decision (`gemini-decision-1`) separately classifies motion in the [motion preview](GEMINI_RAW_LIVE.md) and finalized transcript intent in `inloop_app.py` (`none`, `todo`, `calendar`, or `action_item`). The latter keeps source wording for resulting items and leaves calendar candidates review-only without calendar writes. Decision does not transcribe speech or establish speaker identity.
+
 Deepgram diarization separates numbered speakers. Local voice verification compares a
 speech segment with a deliberately enrolled profile; it never assumes Speaker 0 is you.
 The same authenticated ingress, sample clock, recognizer and authoritative journal remain.
@@ -34,14 +36,14 @@ Never copy virtual environments between machines.
 
 Use a deliberate 9–30 second sample of only your voice: uncompressed mono PCM16 at
 16 kHz, with ordinary speech in a quiet setting. For a band sample, coordinate the
-existing explicit diagnostic capture (`./omi dev capture --record`); it saves a private
+existing explicit diagnostic capture (`./vexo dev capture --record`); it saves a private
 WAV. Check it contains only your intended speech before enrolling. Never enroll an
 ambient recording or a synthetic demo as the wearer's voice.
 
 ```sh
-./omi voice enroll --wav /absolute/path/to/my-deliberate-sample.wav
-./omi voice status
-./omi voice forget
+./vexo voice enroll --wav /absolute/path/to/my-deliberate-sample.wav
+./vexo voice status
+./vexo voice forget
 ```
 
 Enrollment extracts several three-second embeddings and rejects inconsistent samples.
