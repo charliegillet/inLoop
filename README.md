@@ -7,6 +7,7 @@
 [![Python 3.15](https://img.shields.io/badge/python-3.15-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Tests](https://img.shields.io/badge/tests-519%20passing-2ea44f)](#development) [![Deepgram Nova-3](https://img.shields.io/badge/speech-Deepgram%20Nova--3-13EF93)](https://deepgram.com/) [![Gemini](https://img.shields.io/badge/tasks-Gemini-4285F4?logo=googlegemini&logoColor=white)](https://ai.google.dev/) [![Built at VexoHacks](https://img.shields.io/badge/built%20at-VexoHacks%20%C2%B7%20YC%20SF%202026-F26522)](https://www.vexoai.com/hackathon)
 
 <p>
+<a href="#demo">Watch demo</a> ·
 <a href="#what-a-conversation-looks-like">See it work</a> ·
 <a href="#how-it-works">How it works</a> ·
 <a href="#quick-start">Quick start</a> ·
@@ -20,6 +21,12 @@ You say "I'll send Sam the deck tomorrow" halfway through a conversation. By din
 inLoop listens through a Vexo band on your wrist, captions everything you say, and saves it to a local journal. Gemini picks out the promises and requests, and each to-do keeps the exact quote it came from. Every sentence is matched to where you were, using your phone's GPS. Health readings and your open GitHub issues and pull requests sit on the same screen.
 
 Everything runs on one Mac. Captions, tasks and GPS fixes stay in local files and a local SQLite database.
+
+## Demo
+
+[![Watch the inLoop demo on YouTube](https://img.youtube.com/vi/6uO9b89b-s0/hqdefault.jpg)](https://youtu.be/6uO9b89b-s0)
+
+[Watch our VexoHacks demo →](https://youtu.be/6uO9b89b-s0)
 
 ## What a conversation looks like
 
